@@ -30,7 +30,10 @@ def t(en, es):
 
 # --- LOGIN PAGE ---
 if not st.session_state.authenticated:
-    st.title("🔐 " + t("Partner Login", "Inicio de Sesión para Socios"))
+    #st.title("🔐 " + t("Partner Login", "Inicio de Sesión para Socios"))
+    st.image("images/IMG_3059.jpeg", width=200)  # Adjust the path and size as needed
+    st.markdown(f"### {t('Partner Login', 'Inicio de Sesión para Socios')}")
+
 
     username = st.text_input(t("Username", "Usuario"), key="username_input")
     password = st.text_input(t("Password", "Contraseña"), type="password", key="password_input")
