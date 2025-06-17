@@ -1,5 +1,5 @@
 import streamlit as st
-st.set_page_config(page_title="Referral Tracker", layout="wide")  # MUST BE FIRST
+st.set_page_config(page_title="Referral Tracker", layout="wide")
 
 import pandas as pd
 from datetime import datetime
@@ -34,7 +34,6 @@ if not st.session_state.authenticated:
     st.image("https://github.com/heydi424/partnership/blob/main/images/IMG_3059.jpeg", width=150)  # Adjust the path and size as needed
     st.markdown(f"### {t('Partner Login', 'Inicio de Sesión para Socios')}")
 
-
     username = st.text_input(t("Username", "Usuario"), key="username_input")
     password = st.text_input(t("Password", "Contraseña"), type="password", key="password_input")
 
@@ -42,11 +41,11 @@ if not st.session_state.authenticated:
         if username in users and password == users[username]:
             st.session_state.authenticated = True
             st.session_state.username = username
-            st.rerun()  # Immediately reload the app to hide login
+            st.rerun()
         else:
             st.error(t("Invalid credentials", "Credenciales inválidas"))
 
-    st.stop()  # Prevent rendering anything else until login
+    st.stop()
 
 # --- LOGGED IN DASHBOARD STARTS HERE ---
 st.title("🤝 " + t("Community Referral Tracking System", "Sistema Comunitario de Referencias"))
@@ -60,7 +59,9 @@ if st.button("🔓 " + t("Log Out", "Cerrar Sesión")):
 # --- Ensure CSV File Exists ---
 csv_file = "referrals.csv"
 if not os.path.exists(csv_file):
-    df_init = pd.DataFrame(columns=["Name", "Contact", "Issue", "Referred By", "Urgency", "Date", "Status", "File"])
+    df_init = pd.DataFrame(columns=[
+        "Name", "Contact", "Issue", "Referred By", "Assigned To", "Urgency", "Date", "Status", "File"
+    ])
     df_init.to_csv(csv_file, index=False)
 
 # --- Referral Intake Form ---
@@ -70,6 +71,7 @@ with st.sidebar.form("referral_form"):
     contact = st.text_input(t("Phone or Email", "Teléfono o Correo Electrónico"))
     issue = st.selectbox(t("Issue Type", "Tipo de Problema"), ["Legal", "Housing", "Mental Health", "Other"])
     referred_by = st.session_state.username
+    assigned_to = st.selectbox(t("Assign To", "Asignar a"), list(users.keys()))
     urgency = st.selectbox(t("Urgency", "Urgencia"), ["Low", "Medium", "High"])
     file_upload = st.file_uploader(t("Attach File (Optional)", "Adjuntar Archivo (Opcional)"))
     submit = st.form_submit_button(t("Submit", "Enviar"))
@@ -88,6 +90,7 @@ with st.sidebar.form("referral_form"):
             "Contact": contact,
             "Issue": issue,
             "Referred By": referred_by,
+            "Assigned To": assigned_to,
             "Urgency": urgency,
             "Date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Status": "Received",
@@ -96,10 +99,11 @@ with st.sidebar.form("referral_form"):
         new_data.to_csv(csv_file, mode='a', header=False, index=False)
         st.sidebar.success(t("Referral submitted!", "¡Referencia enviada!"))
 
-# --- Load Data ---
+# --- Load and Filter Referrals ---
 df = pd.read_csv(csv_file)
+df = df[df["Assigned To"] == st.session_state.username]
 
-st.subheader("📋 " + t("All Referrals", "Todas las Referencias"))
+st.subheader("📋 " + t("Your Assigned Referrals", "Referencias Asignadas a Usted"))
 st.dataframe(df, use_container_width=True)
 
 # --- Update Referral Status ---
@@ -108,8 +112,9 @@ if not df.empty:
     selected_name = st.selectbox(t("Select Client", "Seleccionar Cliente"), df["Name"].unique())
     new_status = st.selectbox(t("New Status", "Nuevo Estado"), ["Received", "In Progress", "Resolved", "Closed"])
     if st.button(t("Update Status", "Actualizar Estado")):
-        df.loc[df["Name"] == selected_name, "Status"] = new_status
-        df.to_csv(csv_file, index=False)
+        df_all = pd.read_csv(csv_file)
+        df_all.loc[df_all["Name"] == selected_name, "Status"] = new_status
+        df_all.to_csv(csv_file, index=False)
         st.success(t("Status updated!", "¡Estado actualizado!"))
 
 # --- Analytics Dashboard ---
@@ -127,3 +132,8 @@ if not df.empty:
     st.bar_chart(df["Status"].value_counts())
 else:
     st.info(t("No data yet to display analytics.", "Aún no hay datos para mostrar análisis."))
+
+   
+
+
+ 
