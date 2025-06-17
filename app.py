@@ -1,5 +1,5 @@
 import streamlit as st
-st.set_page_config(page_title="Referral Tracker", layout="wide")  # Must be first!
+st.set_page_config(page_title="Referral Tracker", layout="wide")  # Must be the first Streamlit call
 
 import pandas as pd
 from datetime import datetime
@@ -16,7 +16,7 @@ users = {
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# --- Session State ---
+# --- Session State Initialization ---
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "username" not in st.session_state:
@@ -28,38 +28,38 @@ if "language" not in st.session_state:
 language = st.sidebar.selectbox("🌐 Language / Idioma", ["English", "Español"])
 st.session_state.language = language
 
-def t(text_en, text_es):
-    return text_en if st.session_state.language == "English" else text_es
+def t(en, es):
+    return en if st.session_state.language == "English" else es
 
-# --- Login Interface ---
+# --- Login Section ---
 if not st.session_state.authenticated:
     st.title("🔐 " + t("Partner Login", "Inicio de Sesión para Socios"))
 
     username = st.text_input(t("Username", "Usuario"))
     password = st.text_input(t("Password", "Contraseña"), type="password")
 
-    login_attempt = st.button(t("Login", "Iniciar sesión"))
-
-    if login_attempt:
+    if st.button(t("Login", "Iniciar sesión")):
         if username in users and password == users[username]:
             st.session_state.authenticated = True
             st.session_state.username = username
-
-            # Trigger a soft rerun using query_params (supported version)
-            st.query_params["logged_in"] = "true"
             st.success(t("Login successful!", "¡Inicio de sesión exitoso!"))
-            st.stop()
-
         else:
             st.error(t("Invalid credentials", "Credenciales inválidas"))
 
+# --- Stop Unauthenticated Users ---
+if not st.session_state.authenticated:
     st.stop()
 
-
-# --- MAIN APP (Only visible after login) ---
+# --- Main App Content ---
 st.title("🤝 " + t("Community Referral Tracking System", "Sistema Comunitario de Referencias"))
 
-# --- Data File ---
+# --- Log Out Button ---
+if st.button("🔓 " + t("Log Out", "Cerrar Sesión")):
+    st.session_state.authenticated = False
+    st.session_state.username = ""
+    st.rerun()
+
+# --- Data File Setup ---
 csv_file = "referrals.csv"
 if not os.path.exists(csv_file):
     df_init = pd.DataFrame(columns=["Name", "Contact", "Issue", "Referred By", "Urgency", "Date", "Status", "File"])
@@ -114,7 +114,7 @@ if not df.empty:
         df.to_csv(csv_file, index=False)
         st.success(t("Status updated!", "¡Estado actualizado!"))
 
-# --- Analytics Dashboard ---
+# --- Analytics ---
 st.subheader("📊 " + t("Analytics Dashboard", "Panel de Análisis"))
 if not df.empty:
     st.markdown("#### " + t("Referrals by Issue Type", "Referencias por Tipo de Problema"))
