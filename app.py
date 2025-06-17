@@ -32,6 +32,9 @@ def t(en, es):
 if not st.session_state.authenticated:
     #st.title("🔐 " + t("Partner Login", "Inicio de Sesión para Socios"))
     st.image("https://github.com/heydi424/partnership/blob/main/images/logo.jpeg", width=150)  # Adjust the path and size as needed
+    import os
+    st.write("Image exists:", os.path.exists("images/logo.jpeg"))
+
     st.markdown(f"### {t('Partner Login', 'Inicio de Sesión para Socios')}")
 
     username = st.text_input(t("Username", "Usuario"), key="username_input")
