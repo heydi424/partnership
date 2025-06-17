@@ -16,7 +16,7 @@ users = {
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# Session state setup
+# --- Session State ---
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "username" not in st.session_state:
@@ -43,11 +43,13 @@ if not st.session_state.authenticated:
             st.session_state.authenticated = True
             st.session_state.username = username
             st.success(t("Login successful!", "¡Inicio de sesión exitoso!"))
+            st.experimental_rerun()
         else:
             st.error(t("Invalid credentials", "Credenciales inválidas"))
-        st.stop()
 
-# --- App Title ---
+    st.stop()  # Ensures rest of app is not shown unless logged in
+
+# --- MAIN APP (Only visible after login) ---
 st.title("🤝 " + t("Community Referral Tracking System", "Sistema Comunitario de Referencias"))
 
 # --- Data File ---
