@@ -44,12 +44,15 @@ if not st.session_state.authenticated:
         if username in users and password == users[username]:
             st.session_state.authenticated = True
             st.session_state.username = username
+
+            # Trigger a soft rerun using query_params (supported version)
+            st.query_params["logged_in"] = "true"
             st.success(t("Login successful!", "¡Inicio de sesión exitoso!"))
-            st.experimental_set_query_params(logged_in="true")  # Trick to force app rerun
+            st.stop()
+
         else:
             st.error(t("Invalid credentials", "Credenciales inválidas"))
 
-    # Exit if not authenticated yet
     st.stop()
 
 
