@@ -1,9 +1,12 @@
 import streamlit as st
+st.set_page_config(page_title="Referral Tracker", layout="wide")  # ← must come first!
+
 import pandas as pd
 from datetime import datetime
 import matplotlib.pyplot as plt
 import hashlib
 import os
+
 
 # --- User Authentication ---
 users = {
