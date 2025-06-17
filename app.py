@@ -120,3 +120,4 @@ if not df.empty:
     st.bar_chart(df["Status"].value_counts())
 else:
     st.info(t("No data yet to display analytics.", "Aún no hay datos para mostrar análisis."))
+
