@@ -48,6 +48,7 @@ if not st.session_state.authenticated:
             st.error(t("Invalid credentials", "Credenciales inválidas"))
 
     st.stop()  # Still required to prevent access before login
+
 # --- MAIN APP (Only visible after login) ---
 st.title("🤝 " + t("Community Referral Tracking System", "Sistema Comunitario de Referencias"))
 
