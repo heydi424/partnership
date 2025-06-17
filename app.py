@@ -41,10 +41,9 @@ if not st.session_state.authenticated:
             st.session_state.authenticated = True
             st.session_state.username = username
             st.success(t("Login successful!", "¡Inicio de sesión exitoso!"))
-            st.stop()
         else:
             st.error(t("Invalid credentials", "Credenciales inválidas"))
-    st.stop()
+        st.stop()
 
 # --- App Setup ---
 st.set_page_config(page_title="Referral Tracker", layout="wide")
