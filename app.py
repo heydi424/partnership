@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import hashlib
 import os
 
-# Simple user authentication
+# --- User Authentication ---
 users = {
     "partner1": "password123",
     "partner2": "referral456"
@@ -14,7 +14,7 @@ users = {
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# Session state
+# Session state setup
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "username" not in st.session_state:
@@ -22,17 +22,16 @@ if "username" not in st.session_state:
 if "language" not in st.session_state:
     st.session_state.language = "English"
 
-# Language toggle
-language = st.sidebar.selectbox("🌐 Language", ["English", "Español"])
+# --- Language Toggle ---
+language = st.sidebar.selectbox("🌐 Language / Idioma", ["English", "Español"])
 st.session_state.language = language
 
-# Translation helper
 def t(text_en, text_es):
     return text_en if st.session_state.language == "English" else text_es
 
-# Login
+# --- Login Interface ---
 if not st.session_state.authenticated:
-    st.title("🔐 " + t("Partner Login", "Inicio de sesión para socios"))
+    st.title("🔐 " + t("Partner Login", "Inicio de Sesión para Socios"))
 
     username = st.text_input(t("Username", "Usuario"))
     password = st.text_input(t("Password", "Contraseña"), type="password")
@@ -42,15 +41,16 @@ if not st.session_state.authenticated:
             st.session_state.authenticated = True
             st.session_state.username = username
             st.success(t("Login successful!", "¡Inicio de sesión exitoso!"))
-            st.experimental_rerun()
+            st.stop()
         else:
             st.error(t("Invalid credentials", "Credenciales inválidas"))
     st.stop()
 
-# Set app config after login
+# --- App Setup ---
 st.set_page_config(page_title="Referral Tracker", layout="wide")
 st.title("🤝 " + t("Community Referral Tracking System", "Sistema Comunitario de Referencias"))
 
+# --- Data File ---
 csv_file = "referrals.csv"
 if not os.path.exists(csv_file):
     df_init = pd.DataFrame(columns=["Name", "Contact", "Issue", "Referred By", "Urgency", "Date", "Status", "File"])
@@ -89,13 +89,13 @@ with st.sidebar.form("referral_form"):
         new_data.to_csv(csv_file, mode='a', header=False, index=False)
         st.sidebar.success(t("Referral submitted!", "¡Referencia enviada!"))
 
-# --- Load and Display Referrals ---
+# --- Load Referrals ---
 df = pd.read_csv(csv_file)
 
 st.subheader("📋 " + t("All Referrals", "Todas las Referencias"))
 st.dataframe(df, use_container_width=True)
 
-# --- Status Update ---
+# --- Update Status ---
 st.subheader("🔁 " + t("Update Referral Status", "Actualizar Estado de Referencia"))
 if not df.empty:
     selected_name = st.selectbox(t("Select Client", "Seleccionar Cliente"), df["Name"].unique())
