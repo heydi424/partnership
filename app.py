@@ -1,5 +1,5 @@
 import streamlit as st
-st.set_page_config(page_title="Referral Tracker", layout="wide")  # Must be the first Streamlit call
+st.set_page_config(page_title="Referral Tracker", layout="wide")  # MUST BE FIRST
 
 import pandas as pd
 from datetime import datetime
@@ -7,14 +7,11 @@ import matplotlib.pyplot as plt
 import hashlib
 import os
 
-# --- User Authentication ---
+# --- Users ---
 users = {
     "partner1": "password123",
     "partner2": "referral456"
 }
-
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
 
 # --- Session State Initialization ---
 if "authenticated" not in st.session_state:
@@ -31,26 +28,24 @@ st.session_state.language = language
 def t(en, es):
     return en if st.session_state.language == "English" else es
 
-# --- Login Section ---
+# --- LOGIN PAGE ---
 if not st.session_state.authenticated:
     st.title("🔐 " + t("Partner Login", "Inicio de Sesión para Socios"))
 
-    username = st.text_input(t("Username", "Usuario"))
-    password = st.text_input(t("Password", "Contraseña"), type="password")
+    username = st.text_input(t("Username", "Usuario"), key="username_input")
+    password = st.text_input(t("Password", "Contraseña"), type="password", key="password_input")
 
     if st.button(t("Login", "Iniciar sesión")):
         if username in users and password == users[username]:
             st.session_state.authenticated = True
             st.session_state.username = username
-            st.success(t("Login successful!", "¡Inicio de sesión exitoso!"))
+            st.rerun()  # Immediately reload the app to hide login
         else:
             st.error(t("Invalid credentials", "Credenciales inválidas"))
 
-# --- Stop Unauthenticated Users ---
-if not st.session_state.authenticated:
-    st.stop()
+    st.stop()  # Prevent rendering anything else until login
 
-# --- Main App Content ---
+# --- LOGGED IN DASHBOARD STARTS HERE ---
 st.title("🤝 " + t("Community Referral Tracking System", "Sistema Comunitario de Referencias"))
 
 # --- Log Out Button ---
@@ -59,7 +54,7 @@ if st.button("🔓 " + t("Log Out", "Cerrar Sesión")):
     st.session_state.username = ""
     st.rerun()
 
-# --- Data File Setup ---
+# --- Ensure CSV File Exists ---
 csv_file = "referrals.csv"
 if not os.path.exists(csv_file):
     df_init = pd.DataFrame(columns=["Name", "Contact", "Issue", "Referred By", "Urgency", "Date", "Status", "File"])
@@ -98,13 +93,13 @@ with st.sidebar.form("referral_form"):
         new_data.to_csv(csv_file, mode='a', header=False, index=False)
         st.sidebar.success(t("Referral submitted!", "¡Referencia enviada!"))
 
-# --- Load Referrals ---
+# --- Load Data ---
 df = pd.read_csv(csv_file)
 
 st.subheader("📋 " + t("All Referrals", "Todas las Referencias"))
 st.dataframe(df, use_container_width=True)
 
-# --- Update Status ---
+# --- Update Referral Status ---
 st.subheader("🔁 " + t("Update Referral Status", "Actualizar Estado de Referencia"))
 if not df.empty:
     selected_name = st.selectbox(t("Select Client", "Seleccionar Cliente"), df["Name"].unique())
@@ -114,7 +109,7 @@ if not df.empty:
         df.to_csv(csv_file, index=False)
         st.success(t("Status updated!", "¡Estado actualizado!"))
 
-# --- Analytics ---
+# --- Analytics Dashboard ---
 st.subheader("📊 " + t("Analytics Dashboard", "Panel de Análisis"))
 if not df.empty:
     st.markdown("#### " + t("Referrals by Issue Type", "Referencias por Tipo de Problema"))
