@@ -1,12 +1,11 @@
 import streamlit as st
-st.set_page_config(page_title="Referral Tracker", layout="wide")  # ← must come first!
+st.set_page_config(page_title="Referral Tracker", layout="wide")  # Must be first!
 
 import pandas as pd
 from datetime import datetime
 import matplotlib.pyplot as plt
 import hashlib
 import os
-
 
 # --- User Authentication ---
 users = {
@@ -48,8 +47,7 @@ if not st.session_state.authenticated:
             st.error(t("Invalid credentials", "Credenciales inválidas"))
         st.stop()
 
-# --- App Setup ---
-st.set_page_config(page_title="Referral Tracker", layout="wide")
+# --- App Title ---
 st.title("🤝 " + t("Community Referral Tracking System", "Sistema Comunitario de Referencias"))
 
 # --- Data File ---
@@ -107,7 +105,7 @@ if not df.empty:
         df.to_csv(csv_file, index=False)
         st.success(t("Status updated!", "¡Estado actualizado!"))
 
-# --- Analytics ---
+# --- Analytics Dashboard ---
 st.subheader("📊 " + t("Analytics Dashboard", "Panel de Análisis"))
 if not df.empty:
     st.markdown("#### " + t("Referrals by Issue Type", "Referencias por Tipo de Problema"))
