@@ -43,12 +43,11 @@ if not st.session_state.authenticated:
             st.session_state.authenticated = True
             st.session_state.username = username
             st.success(t("Login successful!", "¡Inicio de sesión exitoso!"))
-            st.experimental_rerun()
+            st.stop()  # Just stop — don’t rerun
         else:
             st.error(t("Invalid credentials", "Credenciales inválidas"))
 
-    st.stop()  # Ensures rest of app is not shown unless logged in
-
+    st.stop()  # Still required to prevent access before login
 # --- MAIN APP (Only visible after login) ---
 st.title("🤝 " + t("Community Referral Tracking System", "Sistema Comunitario de Referencias"))
 
