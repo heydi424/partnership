@@ -38,16 +38,20 @@ if not st.session_state.authenticated:
     username = st.text_input(t("Username", "Usuario"))
     password = st.text_input(t("Password", "Contraseña"), type="password")
 
-    if st.button(t("Login", "Iniciar sesión")):
+    login_attempt = st.button(t("Login", "Iniciar sesión"))
+
+    if login_attempt:
         if username in users and password == users[username]:
             st.session_state.authenticated = True
             st.session_state.username = username
             st.success(t("Login successful!", "¡Inicio de sesión exitoso!"))
-            st.stop()  # Just stop — don’t rerun
+            st.experimental_set_query_params(logged_in="true")  # Trick to force app rerun
         else:
             st.error(t("Invalid credentials", "Credenciales inválidas"))
 
-    st.stop()  # Still required to prevent access before login
+    # Exit if not authenticated yet
+    st.stop()
+
 
 # --- MAIN APP (Only visible after login) ---
 st.title("🤝 " + t("Community Referral Tracking System", "Sistema Comunitario de Referencias"))
