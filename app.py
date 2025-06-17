@@ -31,7 +31,7 @@ def t(en, es):
 # --- LOGIN PAGE ---
 if not st.session_state.authenticated:
     #st.title("🔐 " + t("Partner Login", "Inicio de Sesión para Socios"))
-    st.image("images/IMG_3059.jpeg", width=200)  # Adjust the path and size as needed
+    st.image("https://github.com/heydi424/partnership/blob/main/images/IMG_3059.jpeg", width=200)  # Adjust the path and size as needed
     st.markdown(f"### {t('Partner Login', 'Inicio de Sesión para Socios')}")
 
 
