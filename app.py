@@ -159,20 +159,24 @@ with tab2:
 
 # --- Tab 3: All Referrals Sent ---
 with tab3:
-    st.subheader("📂 " + t("All Referrals Sent", "Todas las Referencias Enviadas"))
+    st.subheader("📂 " + t("All Referrals", "Todas las Referencias"))
     if not df.empty:
         display_df = df.copy()
         display_df["Type"] = display_df.apply(
             lambda x: "Sent" if x["Referred By"] == st.session_state.username else "Received", axis=1
         )
 
-        # Avoid duplicate Notes column and show download links
+        # Filter by referral type
+        type_filter = st.selectbox("Filter by Referral Type", ["All", "Sent", "Received"])
+        if type_filter != "All":
+            display_df = display_df[display_df["Type"] == type_filter]
+
+        # Fill missing values and build download links
         display_df["Notes"] = display_df["Notes"].fillna("")
         display_df["File Download"] = display_df["File"].apply(
-            lambda path: f'<a href="{path}" download>{os.path.basename(path)}</a>' if pd.notna(path) and path else ""
+            lambda path: f'<a href="file://{os.path.abspath(path)}" download>{os.path.basename(path)}</a>' if pd.notna(path) and os.path.exists(path) else ""
         )
 
-        # Select columns to display without duplication
         display_df = display_df[[
             "Name", "Contact", "Issue", "Referred By", "Assigned To",
             "Urgency", "Date", "Status", "File Download", "Notes", "Type"
