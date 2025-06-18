@@ -101,7 +101,7 @@ if "Notes" not in df.columns:
 tab1, tab2, tab3, tab4 = st.tabs([
     t("Your Assigned Referrals", "Referencias Asignadas"),
     t("Referrals I Sent", "Referencias Enviadas"),
-    t("All Referrals Sent", "Todas las Referencias Enviadas"),
+    t("All Referrals", "Todas las Referencias"),
     t("Analytics Dashboard", "Panel de Análisis")
 ])
 
@@ -159,7 +159,7 @@ with tab2:
 
 # --- Tab 3: All Referrals Sent ---
 with tab3:
-    st.subheader("📂 " + t("All Referrals Sent", "Todas las Referencias Enviadas"))
+    st.subheader("📂 " + t("All Referrals", "Todas las Referencias"))
     if not df.empty:
         display_df = df.copy()
         display_df["Type"] = display_df.apply(
