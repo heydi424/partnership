@@ -191,3 +191,12 @@ with tab4:
 
         st.markdown("#### " + t("Referrals by Status", "Referencias por Estado"))
         st.bar_chart(df["Status"].value_counts())
+
+
+ 
+
+
+  
+   
+
+ 
