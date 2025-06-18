@@ -101,7 +101,7 @@ if "Notes" not in df.columns:
 tab1, tab2, tab3, tab4 = st.tabs([
     t("Your Assigned Referrals", "Referencias Asignadas"),
     t("Referrals I Sent", "Referencias Enviadas"),
-    t("All Referrals Sent", "Todas las Referencias Enviadas"),
+    t("All Referrals", "Todas las Referencias"),
     t("Analytics Dashboard", "Panel de Análisis")
 ])
 
@@ -170,7 +170,11 @@ with tab3:
     if not df.empty:
         display_df = df.copy()
         display_df["Type"] = display_df.apply(lambda x: "Sent" if x["Referred By"] == st.session_state.username else "Received", axis=1)
+
+        # Drop duplicate Notes display if it causes confusion
+        display_df = display_df[["Name", "Contact", "Issue", "Referred By", "Assigned To", "Urgency", "Date", "Status", "File", "Notes", "Type"]]
         st.dataframe(display_df)
+
         st.download_button("⬇️ Download All as CSV", display_df.to_csv(index=False), file_name="all_referrals.csv")
         all_excel_buf = io.BytesIO()
         display_df.to_excel(all_excel_buf, index=False, engine="xlsxwriter")
