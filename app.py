@@ -160,6 +160,7 @@ with tab1:
         st.info(t("No referrals assigned to you yet.", "Aún no hay referencias asignadas."))
 
 # --- Tab 2: Referrals I Sent ---
+# --- Tab 2: Referrals I Sent ---
 with tab2:
     sent_df = df[df["Referred By"] == st.session_state.username]
     st.subheader("📨 " + t("Referrals I Sent", "Referencias Enviadas"))
@@ -177,6 +178,17 @@ with tab2:
         # Add download link for uploaded file
         filtered_sent_df["File Download"] = filtered_sent_df["File"].apply(
             lambda path: f'<a href="file://{os.path.abspath(path)}" download>{os.path.basename(path)}</a>' if pd.notna(path) and os.path.exists(path) else ""
+        )
+
+        # Highlight urgency with colors
+        def urgency_color(urgency):
+            if urgency == "High": return "#ffcccc"
+            elif urgency == "Medium": return "#fff5cc"
+            else: return "#ccffcc"
+
+        styled_sent_df = filtered_sent_df.style.applymap(
+            lambda x: urgency_color(x) if x in ["Low", "Medium", "High"] else "",
+            subset=["Urgency"]
         )
 
         st.markdown(styled_sent_df.to_html(escape=False, index=False), unsafe_allow_html=True)
