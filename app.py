@@ -105,36 +105,24 @@ tab1, tab2, tab3, tab4 = st.tabs([
     t("Analytics Dashboard", "Panel de Análisis")
 ])
 
-# --- Tab 1: Assigned To Me ---
+#-----tab1-----
 with tab1:
     assigned_df = df[df["Assigned To"] == st.session_state.username]
     st.subheader("📋 " + t("Referrals Assigned to You", "Referencias Asignadas a Usted"))
 
     if not assigned_df.empty:
-        urgency_colors = {"Low": "🟩", "Medium": "🟨", "High": "🟥"}
-
-        with st.expander("View Your Referrals"):
-            for _, row in assigned_df.iterrows():
-                st.markdown(f"**Client:** {row['Name']}")
-                st.markdown(f"**Urgency:** {urgency_colors.get(row['Urgency'], '')} {row['Urgency']}")
-                st.markdown(f"**Status:** {row['Status']}")
-                st.markdown(f"**Notes:** {row.get('Notes', '')}")
-                if pd.notna(row["File"]) and row["File"]:
-                    file_name = os.path.basename(row["File"])
-                    with open(row["File"], "rb") as f:
-                        b64 = base64.b64encode(f.read()).decode()
-                        href = f'<a href="data:application/octet-stream;base64,{b64}" download="{file_name}">📎 Download {file_name}</a>'
-                        st.markdown(href, unsafe_allow_html=True)
-                st.markdown("---")
-
-        # Filters
         urgency_filter = st.multiselect("Filter by Urgency", ["Low", "Medium", "High"], default=["Low", "Medium", "High"])
         status_filter = st.multiselect("Filter by Status", df["Status"].unique().tolist(), default=df["Status"].unique().tolist())
-        filtered_df = assigned_df[(assigned_df["Urgency"].isin(urgency_filter)) & (assigned_df["Status"].isin(status_filter))]
+        search_name = st.text_input("Search by Client Name")
+
+        filtered_df = assigned_df[
+            (assigned_df["Urgency"].isin(urgency_filter)) &
+            (assigned_df["Status"].isin(status_filter)) &
+            (assigned_df["Name"].str.contains(search_name, case=False, na=False))
+        ]
+
         st.dataframe(filtered_df, use_container_width=True)
 
-        # Update Status
-        st.subheader("🔄 Update Referral Status")
         selected_name = st.selectbox("Select Client", assigned_df["Name"].unique())
         new_status = st.selectbox("New Status", ["Received", "In Progress", "Resolved", "Closed"])
         if st.button("Update Status"):
@@ -144,18 +132,29 @@ with tab1:
     else:
         st.info(t("No referrals assigned to you yet.", "Aún no hay referencias asignadas."))
 
-# --- Tab 2: I Sent ---
+# --- Tab 2: Referrals I Sent ---
 with tab2:
     sent_df = df[df["Referred By"] == st.session_state.username]
     st.subheader("📨 " + t("Referrals I Sent", "Referencias Enviadas"))
     if not sent_df.empty:
-        st.dataframe(sent_df, use_container_width=True)
-        st.download_button("⬇️ Download as CSV", sent_df.to_csv(index=False), file_name="my_sent_referrals.csv")
+        urgency_filter_sent = st.multiselect("Filter by Urgency", ["Low", "Medium", "High"], default=["Low", "Medium", "High"])
+        status_filter_sent = st.multiselect("Filter by Status", df["Status"].unique().tolist(), default=df["Status"].unique().tolist())
+        search_name_sent = st.text_input("Search by Client Name (Sent)")
+
+        filtered_sent_df = sent_df[
+            (sent_df["Urgency"].isin(urgency_filter_sent)) &
+            (sent_df["Status"].isin(status_filter_sent)) &
+            (sent_df["Name"].str.contains(search_name_sent, case=False, na=False))
+        ]
+
+        st.dataframe(filtered_sent_df, use_container_width=True)
+        st.download_button("⬇️ Download as CSV", filtered_sent_df.to_csv(index=False), file_name="my_sent_referrals.csv")
         excel_buf = io.BytesIO()
-        sent_df.to_excel(excel_buf, index=False, engine="xlsxwriter")
+        filtered_sent_df.to_excel(excel_buf, index=False, engine="xlsxwriter")
         st.download_button("📊 Download as Excel", excel_buf.getvalue(), file_name="my_sent_referrals.xlsx")
     else:
         st.info(t("You haven't sent any referrals yet.", "Aún no has enviado referencias."))
+
 
 # --- Tab 3: All Referrals Sent ---
 with tab3:
