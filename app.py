@@ -104,16 +104,15 @@ tab1, tab2, tab3, tab4 = st.tabs([
     t("All Referrals", "Todas las Referencias"),
     t("Analytics Dashboard", "Panel de Análisis")
 ])
-
-#-----tab1-----
+#----tab1-----
 with tab1:
     assigned_df = df[df["Assigned To"] == st.session_state.username]
     st.subheader("📋 " + t("Referrals Assigned to You", "Referencias Asignadas a Usted"))
 
     if not assigned_df.empty:
-        urgency_filter = st.multiselect("Filter by Urgency", ["Low", "Medium", "High"], default=["Low", "Medium", "High"])
-        status_filter = st.multiselect("Filter by Status", df["Status"].unique().tolist(), default=df["Status"].unique().tolist())
-        search_name = st.text_input("Search by Client Name")
+        urgency_filter = st.multiselect("Filter by Urgency", ["Low", "Medium", "High"], key="urgency_filter_assigned", default=["Low", "Medium", "High"])
+        status_filter = st.multiselect("Filter by Status", df["Status"].unique().tolist(), key="status_filter_assigned", default=df["Status"].unique().tolist())
+        search_name = st.text_input("Search by Client Name", key="search_name_assigned")
 
         filtered_df = assigned_df[
             (assigned_df["Urgency"].isin(urgency_filter)) &
@@ -121,7 +120,35 @@ with tab1:
             (assigned_df["Name"].str.contains(search_name, case=False, na=False))
         ]
 
-        st.dataframe(filtered_df, use_container_width=True)
+        # Add download link for uploaded file
+        filtered_sent_df["File Download"] = filtered_sent_df["File"].apply(
+            lambda path: f'<a href="file://{os.path.abspath(path)}" download>{os.path.basename(path)}</a>' if pd.notna(path) and os.path.exists(path) else ""
+        )
+
+        # Highlight urgency with colors
+        styled_sent_df = filtered_sent_df.style.applymap(
+            lambda x: urgency_color(x) if x in ["Low", "Medium", "High"] else "",
+            subset=["Urgency"]
+        )
+        filtered_df["File Download"] = filtered_df["File"].apply(
+            lambda path: f'<a href="file://{os.path.abspath(path)}" download>{os.path.basename(path)}</a>' if pd.notna(path) and os.path.exists(path) else ""
+        )
+
+        # Highlight urgency with colors
+        def urgency_color(urgency):
+            if urgency == "High": return "#ffcccc"
+            elif urgency == "Medium": return "#fff5cc"
+            else: return "#ccffcc"
+
+        styled_df = filtered_df.style.applymap(
+            lambda x: urgency_color(x) if x in ["Low", "Medium", "High"] else "",
+            subset=["Urgency"]
+        )
+        filtered_df["File Download"] = filtered_df["File"].apply(
+            lambda path: f'<a href="file://{os.path.abspath(path)}" download>{os.path.basename(path)}</a>' if pd.notna(path) and os.path.exists(path) else ""
+        )
+
+        st.markdown(styled_df.to_html(escape=False, index=False), unsafe_allow_html=True)
 
         selected_name = st.selectbox("Select Client", assigned_df["Name"].unique())
         new_status = st.selectbox("New Status", ["Received", "In Progress", "Resolved", "Closed"])
@@ -137,9 +164,9 @@ with tab2:
     sent_df = df[df["Referred By"] == st.session_state.username]
     st.subheader("📨 " + t("Referrals I Sent", "Referencias Enviadas"))
     if not sent_df.empty:
-        urgency_filter_sent = st.multiselect("Filter by Urgency", ["Low", "Medium", "High"], default=["Low", "Medium", "High"])
-        status_filter_sent = st.multiselect("Filter by Status", df["Status"].unique().tolist(), default=df["Status"].unique().tolist())
-        search_name_sent = st.text_input("Search by Client Name (Sent)")
+        urgency_filter_sent = st.multiselect("Filter by Urgency", ["Low", "Medium", "High"], key="urgency_filter_sent_tab2", default=["Low", "Medium", "High"])
+        status_filter_sent = st.multiselect("Filter by Status", df["Status"].unique().tolist(), key="status_filter_sent_tab2", default=df["Status"].unique().tolist())
+        search_name_sent = st.text_input("Search by Client Name (Sent)", key="search_name_sent_tab2")
 
         filtered_sent_df = sent_df[
             (sent_df["Urgency"].isin(urgency_filter_sent)) &
@@ -147,13 +174,19 @@ with tab2:
             (sent_df["Name"].str.contains(search_name_sent, case=False, na=False))
         ]
 
-        st.dataframe(filtered_sent_df, use_container_width=True)
+        # Add download link for uploaded file
+        filtered_sent_df["File Download"] = filtered_sent_df["File"].apply(
+            lambda path: f'<a href="file://{os.path.abspath(path)}" download>{os.path.basename(path)}</a>' if pd.notna(path) and os.path.exists(path) else ""
+        )
+
+        st.markdown(styled_sent_df.to_html(escape=False, index=False), unsafe_allow_html=True)
         st.download_button("⬇️ Download as CSV", filtered_sent_df.to_csv(index=False), file_name="my_sent_referrals.csv")
         excel_buf = io.BytesIO()
         filtered_sent_df.to_excel(excel_buf, index=False, engine="xlsxwriter")
         st.download_button("📊 Download as Excel", excel_buf.getvalue(), file_name="my_sent_referrals.xlsx")
     else:
         st.info(t("You haven't sent any referrals yet.", "Aún no has enviado referencias."))
+
 
 
 # --- Tab 3: All Referrals Sent ---
