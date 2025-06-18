@@ -30,7 +30,7 @@ def t(en, es):
 
 # --- Login ---
 if not st.session_state.authenticated:
-    #st.title("🔐 " + t("Partner Login", "Inicio de Sesión para Socios"))
+  #st.title("🔐 " + t("Partner Login", "Inicio de Sesión para Socios"))
     st.cache_data.clear()
     st.image("images/logo.jpeg", width=250)  # Adjust the path and size as needed
     st.markdown(f"### {t('Partner Login', 'Inicio de Sesión para Socios')}")
@@ -109,9 +109,14 @@ tab1, tab2, tab3, tab4 = st.tabs([
 with tab1:
     assigned_df = df[df["Assigned To"] == st.session_state.username]
     st.subheader("📋 " + t("Referrals Assigned to You", "Referencias Asignadas a Usted"))
+
     if not assigned_df.empty:
+        urgency_colors = {"Low": "🟩", "Medium": "🟨", "High": "🟥"}
         for i, row in assigned_df.iterrows():
-            st.markdown(f"**Client:** {row['Name']}  \n**From:** {row['Referred By']}  \n**Status:** {row['Status']}  \n**Notes:** {row.get('Notes', '')}")
+            st.markdown(f"**Client:** {row['Name']}  ")
+            st.markdown(f"**Urgency:** {urgency_colors.get(row['Urgency'], '')} {row['Urgency']}  ")
+            st.markdown(f"**Status:** {row['Status']}  ")
+            st.markdown(f"**Notes:** {row['Notes']}  ")
             if pd.notna(row["File"]) and row["File"] != "":
                 file_name = os.path.basename(row["File"])
                 with open(row["File"], "rb") as f:
@@ -119,6 +124,22 @@ with tab1:
                     href = f'<a href="data:application/octet-stream;base64,{b64}" download="{file_name}">📎 Download {file_name}</a>'
                     st.markdown(href, unsafe_allow_html=True)
             st.markdown("---")
+
+        # Allow filtering by urgency or status
+        with st.expander("🔍 Filter Options"):
+            urgency_filter = st.multiselect("Filter by Urgency", ["Low", "Medium", "High"], default=["Low", "Medium", "High"])
+            status_filter = st.multiselect("Filter by Status", df["Status"].unique().tolist(), default=df["Status"].unique().tolist())
+            filtered_df = assigned_df[(assigned_df["Urgency"].isin(urgency_filter)) & (assigned_df["Status"].isin(status_filter))]
+            st.dataframe(filtered_df)
+
+        # Status update
+        st.subheader("🔄 Update Referral Status")
+        selected_name = st.selectbox("Select Client", assigned_df["Name"].unique())
+        new_status = st.selectbox("New Status", ["Received", "In Progress", "Resolved", "Closed"])
+        if st.button("Update Status"):
+            df.loc[df["Name"] == selected_name, "Status"] = new_status
+            df.to_csv(csv_file, index=False)
+            st.success("Status updated!")
     else:
         st.info(t("No referrals assigned to you yet.", "Aún no hay referencias asignadas."))
 
@@ -171,5 +192,11 @@ with tab4:
         st.markdown("#### " + t("Referrals by Status", "Referencias por Estado"))
         st.bar_chart(df["Status"].value_counts())
 
+
+ 
+
+
+  
+   
 
  
