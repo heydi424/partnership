@@ -35,10 +35,6 @@ if not st.session_state.authenticated:
     st.image("images/logo.jpeg", width=250)  # Adjust the path and size as needed
     st.markdown(f"### {t('Partner Login', 'Inicio de Sesión para Socios')}")
 
-    
-    st.image("images/logo.jpeg", width=250)
-    st.markdown("### " + t("Partner Login", "Inicio de Sesión para Socios"))
-
     username = st.text_input(t("Username", "Usuario"))
     password = st.text_input(t("Password", "Contraseña"), type="password")
 
@@ -61,7 +57,7 @@ if st.button("🔓 " + t("Log Out", "Cerrar Sesión")):
 csv_file = "referrals.csv"
 if not os.path.exists(csv_file):
     pd.DataFrame(columns=[
-        "Name", "Contact", "Issue", "Referred By", "Assigned To", "Urgency", "Date", "Status", "File"
+        "Name", "Contact", "Issue", "Referred By", "Assigned To", "Urgency", "Date", "Status", "File", "Notes"
     ]).to_csv(csv_file, index=False)
 
 # --- Sidebar Referral Form ---
@@ -72,6 +68,7 @@ with st.sidebar.form("referral_form"):
     issue = st.selectbox(t("Issue Type", "Tipo de Problema"), ["Legal", "Housing", "Mental Health", "Other"])
     assigned_to = st.selectbox(t("Assign To", "Asignar a"), list(users.keys()))
     urgency = st.selectbox(t("Urgency", "Urgencia"), ["Low", "Medium", "High"])
+    notes = st.text_area(t("Referral Notes (Optional)", "Notas de la Referencia (Opcional)"))
     file_upload = st.file_uploader(t("Attach File", "Adjuntar Archivo"))
     submit = st.form_submit_button(t("Submit", "Enviar"))
 
@@ -92,7 +89,8 @@ with st.sidebar.form("referral_form"):
             "Urgency": urgency,
             "Date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Status": "Received",
-            "File": file_path
+            "File": file_path,
+            "Notes": notes
         }]).to_csv(csv_file, mode='a', header=False, index=False)
         st.sidebar.success(t("Referral submitted!", "¡Referencia enviada!"))
 
@@ -100,9 +98,10 @@ with st.sidebar.form("referral_form"):
 df = pd.read_csv(csv_file)
 
 # --- Tabs ---
-tab1, tab2, tab3 = st.tabs([
+tab1, tab2, tab3, tab4 = st.tabs([
     t("Your Assigned Referrals", "Referencias Asignadas"),
     t("Referrals I Sent", "Referencias Enviadas"),
+    t("All Referrals Sent", "Todas las Referencias Enviadas"),
     t("Analytics Dashboard", "Panel de Análisis")
 ])
 
@@ -111,7 +110,15 @@ with tab1:
     assigned_df = df[df["Assigned To"] == st.session_state.username]
     st.subheader("📋 " + t("Referrals Assigned to You", "Referencias Asignadas a Usted"))
     if not assigned_df.empty:
-        st.dataframe(assigned_df)
+        for i, row in assigned_df.iterrows():
+            st.markdown(f"**Client:** {row['Name']}  \n**From:** {row['Referred By']}  \n**Status:** {row['Status']}  \n**Notes:** {row.get('Notes', '')}")
+            if pd.notna(row["File"]) and row["File"] != "":
+                file_name = os.path.basename(row["File"])
+                with open(row["File"], "rb") as f:
+                    b64 = base64.b64encode(f.read()).decode()
+                    href = f'<a href="data:application/octet-stream;base64,{b64}" download="{file_name}">📎 Download {file_name}</a>'
+                    st.markdown(href, unsafe_allow_html=True)
+            st.markdown("---")
     else:
         st.info(t("No referrals assigned to you yet.", "Aún no hay referencias asignadas."))
 
@@ -121,25 +128,35 @@ with tab2:
     st.subheader("📨 " + t("Referrals I Sent", "Referencias Enviadas"))
     if not sent_df.empty:
         for i, row in sent_df.iterrows():
-            st.markdown(f"**Client:** {row['Name']}  \n**To:** {row['Assigned To']}  \n**Status:** {row['Status']}")
+            st.markdown(f"**Client:** {row['Name']}  \n**To:** {row['Assigned To']}  \n**Status:** {row['Status']}  \n**Notes:** {row.get('Notes', '')}")
             if pd.notna(row["File"]) and row["File"] != "":
                 file_name = os.path.basename(row["File"])
                 with open(row["File"], "rb") as f:
                     b64 = base64.b64encode(f.read()).decode()
-                    href = f'<a href="data:application/octet-stream;base64,{b64}" download="{file_name}">\ud83d\udcce Download {file_name}</a>'
+                    href = f'<a href="data:application/octet-stream;base64,{b64}" download="{file_name}">📎 Download {file_name}</a>'
                     st.markdown(href, unsafe_allow_html=True)
             st.markdown("---")
-
-        # Download options
-        st.download_button("\u2b07\ufe0f Download as CSV", sent_df.to_csv(index=False), file_name="my_sent_referrals.csv")
+        st.download_button("⬇️ Download as CSV", sent_df.to_csv(index=False), file_name="my_sent_referrals.csv")
         excel_buf = io.BytesIO()
         sent_df.to_excel(excel_buf, index=False, engine="xlsxwriter")
         st.download_button("📊 Download as Excel", excel_buf.getvalue(), file_name="my_sent_referrals.xlsx")
     else:
         st.info(t("You haven't sent any referrals yet.", "Aún no has enviado referencias."))
 
-# --- Analytics ---
+# --- All Sent Referrals ---
 with tab3:
+    st.subheader("📂 " + t("All Referrals Sent", "Todas las Referencias Enviadas"))
+    if not df.empty:
+        st.dataframe(df)
+        st.download_button("⬇️ Download All as CSV", df.to_csv(index=False), file_name="all_referrals.csv")
+        all_excel_buf = io.BytesIO()
+        df.to_excel(all_excel_buf, index=False, engine="xlsxwriter")
+        st.download_button("📊 Download All as Excel", all_excel_buf.getvalue(), file_name="all_referrals.xlsx")
+    else:
+        st.info(t("No referrals found.", "No se encontraron referencias."))
+
+# --- Analytics ---
+with tab4:
     st.subheader("📊 " + t("Analytics Dashboard", "Panel de Análisis"))
     if df.empty:
         st.info(t("No data yet to display analytics.", "Aún no hay datos para mostrar análisis."))
@@ -153,12 +170,6 @@ with tab3:
 
         st.markdown("#### " + t("Referrals by Status", "Referencias por Estado"))
         st.bar_chart(df["Status"].value_counts())
-
-
-      
-   
-   
-   
 
 
  
