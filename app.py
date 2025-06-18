@@ -187,8 +187,6 @@ with tab2:
     else:
         st.info(t("You haven't sent any referrals yet.", "Aún no has enviado referencias."))
 
-
-
 # --- Tab 3: All Referrals Sent ---
 with tab3:
     st.subheader("📂 " + t("All Referrals", "Todas las Referencias"))
