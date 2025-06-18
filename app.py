@@ -159,25 +159,33 @@ with tab2:
 
 # --- Tab 3: All Referrals Sent ---
 with tab3:
-    st.subheader("📂 " + t("All Referrals", "Todas las Referencias"))
+    st.subheader("📂 " + t("All Referrals Sent", "Todas las Referencias Enviadas"))
     if not df.empty:
         display_df = df.copy()
         display_df["Type"] = display_df.apply(
             lambda x: "Sent" if x["Referred By"] == st.session_state.username else "Received", axis=1
         )
-        filtered_display_df = display_df[[
+
+        # Avoid duplicate Notes column and show download links
+        display_df["Notes"] = display_df["Notes"].fillna("")
+        display_df["File Download"] = display_df["File"].apply(
+            lambda path: f'<a href="{path}" download>{os.path.basename(path)}</a>' if pd.notna(path) and path else ""
+        )
+
+        # Select columns to display without duplication
+        display_df = display_df[[
             "Name", "Contact", "Issue", "Referred By", "Assigned To",
-            "Urgency", "Date", "Status", "File", "Notes", "Type"
+            "Urgency", "Date", "Status", "File Download", "Notes", "Type"
         ]]
-        filtered_display_df["Notes"] = filtered_display_df["Notes"].fillna("")
-        st.dataframe(filtered_display_df, use_container_width=True)
-        st.download_button("⬇️ Download All as CSV", filtered_display_df.to_csv(index=False), file_name="all_referrals.csv")
+
+        st.markdown(display_df.to_html(escape=False, index=False), unsafe_allow_html=True)
+
+        st.download_button("⬇️ Download All as CSV", display_df.to_csv(index=False), file_name="all_referrals.csv")
         all_excel_buf = io.BytesIO()
-        filtered_display_df.to_excel(all_excel_buf, index=False, engine="xlsxwriter")
+        display_df.drop(columns=["File Download"]).to_excel(all_excel_buf, index=False, engine="xlsxwriter")
         st.download_button("📊 Download All as Excel", all_excel_buf.getvalue(), file_name="all_referrals.xlsx")
     else:
         st.info(t("No referrals found.", "No se encontraron referencias."))
-
 # --- Tab 4: Analytics ---
 with tab4:
     st.subheader("📊 " + t("Analytics Dashboard", "Panel de Análisis"))
