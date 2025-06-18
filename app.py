@@ -112,34 +112,32 @@ with tab1:
 
     if not assigned_df.empty:
         urgency_colors = {"Low": "🟩", "Medium": "🟨", "High": "🟥"}
-        for i, row in assigned_df.iterrows():
-            st.markdown(f"**Client:** {row['Name']}  ")
-            st.markdown(f"**Urgency:** {urgency_colors.get(row['Urgency'], '')} {row['Urgency']}  ")
-            st.markdown(f"**Status:** {row['Status']}  ")
-            st.markdown(f"**Notes:** {row.get('Notes', '')}  ")
-            if pd.notna(row["File"]) and row["File"] != "":
-                file_name = os.path.basename(row["File"])
-                with open(row["File"], "rb") as f:
-                    b64 = base64.b64encode(f.read()).decode()
-                    href = f'<a href="data:application/octet-stream;base64,{b64}" download="{file_name}">📎 Download {file_name}</a>'
-                    st.markdown(href, unsafe_allow_html=True)
-            st.markdown("---")
+        with st.expander("View Your Referrals"):
+            for i, row in assigned_df.iterrows():
+                st.markdown(f"**Client:** {row['Name']}  ")
+                st.markdown(f"**Urgency:** {urgency_colors.get(row['Urgency'], '')} {row['Urgency']}  ")
+                st.markdown(f"**Status:** {row['Status']}  ")
+                st.markdown(f"**Notes:** {row.get('Notes', '') if pd.notna(row.get('Notes')) else ''}  ")
+                if pd.notna(row["File"]) and row["File"] != "":
+                    file_name = os.path.basename(row["File"])
+                    with open(row["File"], "rb") as f:
+                        b64 = base64.b64encode(f.read()).decode()
+                        href = f'<a href="data:application/octet-stream;base64,{b64}" download="{file_name}">📎 Download {file_name}</a>'
+                        st.markdown(href, unsafe_allow_html=True)
+                st.markdown("---")
 
-        # Allow filtering by urgency or status
-        with st.expander("🔍 Filter Options"):
-            urgency_filter = st.multiselect("Filter by Urgency", ["Low", "Medium", "High"], default=["Low", "Medium", "High"])
-            status_filter = st.multiselect("Filter by Status", df["Status"].unique().tolist(), default=df["Status"].unique().tolist())
-            filtered_df = assigned_df[(assigned_df["Urgency"].isin(urgency_filter)) & (assigned_df["Status"].isin(status_filter))]
-            st.dataframe(filtered_df)
+        urgency_filter = st.multiselect("Filter by Urgency", ["Low", "Medium", "High"], default=["Low", "Medium", "High"])
+        status_filter = st.multiselect("Filter by Status", df["Status"].unique().tolist(), default=df["Status"].unique().tolist())
+        filtered_df = assigned_df[(assigned_df["Urgency"].isin(urgency_filter)) & (assigned_df["Status"].isin(status_filter))]
+        st.dataframe(filtered_df)
 
-        # Status update
         st.subheader("🔄 Update Referral Status")
         selected_name = st.selectbox("Select Client", assigned_df["Name"].unique())
         new_status = st.selectbox("New Status", ["Received", "In Progress", "Resolved", "Closed"])
         if st.button("Update Status"):
             df.loc[df["Name"] == selected_name, "Status"] = new_status
             df.to_csv(csv_file, index=False)
-            st.success("Status updated!")
+            st.rerun()
     else:
         st.info(t("No referrals assigned to you yet.", "Aún no hay referencias asignadas."))
 
@@ -149,7 +147,9 @@ with tab2:
     st.subheader("📨 " + t("Referrals I Sent", "Referencias Enviadas"))
     if not sent_df.empty:
         for i, row in sent_df.iterrows():
-            st.markdown(f"**Client:** {row['Name']}  \n**To:** {row['Assigned To']}  \n**Status:** {row['Status']}  \n**Notes:** {row.get('Notes', '')}")
+            notes = row.get("Notes")
+            notes_display = notes if pd.notna(notes) else ""
+            st.markdown(f"**Client:** {row['Name']}  \n**To:** {row['Assigned To']}  \n**Status:** {row['Status']}  \n**Notes:** {notes_display}")
             if pd.notna(row["File"]) and row["File"] != "":
                 file_name = os.path.basename(row["File"])
                 with open(row["File"], "rb") as f:
@@ -168,10 +168,12 @@ with tab2:
 with tab3:
     st.subheader("📂 " + t("All Referrals Sent", "Todas las Referencias Enviadas"))
     if not df.empty:
-        st.dataframe(df)
-        st.download_button("⬇️ Download All as CSV", df.to_csv(index=False), file_name="all_referrals.csv")
+        display_df = df.copy()
+        display_df["Type"] = display_df.apply(lambda x: "Sent" if x["Referred By"] == st.session_state.username else "Received", axis=1)
+        st.dataframe(display_df)
+        st.download_button("⬇️ Download All as CSV", display_df.to_csv(index=False), file_name="all_referrals.csv")
         all_excel_buf = io.BytesIO()
-        df.to_excel(all_excel_buf, index=False, engine="xlsxwriter")
+        display_df.to_excel(all_excel_buf, index=False, engine="xlsxwriter")
         st.download_button("📊 Download All as Excel", all_excel_buf.getvalue(), file_name="all_referrals.xlsx")
     else:
         st.info(t("No referrals found.", "No se encontraron referencias."))
