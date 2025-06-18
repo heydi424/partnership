@@ -119,18 +119,19 @@ with tab1:
             (assigned_df["Urgency"].isin(urgency_filter)) &
             (assigned_df["Status"].isin(status_filter)) &
             (assigned_df["Name"].str.contains(search_name, case=False, na=False))
-        ]
+        ].copy()
 
-        filtered_df["File Download"] = filtered_df["File"].apply(
-            lambda path: f'<a href="file://{os.path.abspath(path)}" download>{os.path.basename(path)}</a>' if pd.notna(path) and os.path.exists(path) else ""
-        )
+        if not filtered_df.empty:
+            filtered_df["File Download"] = filtered_df["File"].apply(
+                lambda path: f'<a href="file://{os.path.abspath(path)}" download>{os.path.basename(path)}</a>' if pd.notna(path) and os.path.exists(path) else ""
+            )
 
-        styled_df = filtered_df.style.applymap(
-            lambda x: urgency_color(x) if x in ["Low", "Medium", "High"] else "",
-            subset=["Urgency"]
-        )
+            styled_df = filtered_df.style.applymap(
+                lambda x: urgency_color(x) if x in ["Low", "Medium", "High"] else "",
+                subset=["Urgency"]
+            )
 
-        st.markdown(styled_df.to_html(escape=False, index=False), unsafe_allow_html=True)
+            st.markdown(styled_df.to_html(escape=False, index=False), unsafe_allow_html=True)
 
         selected_name = st.selectbox("Select Client", assigned_df["Name"].unique())
         new_status = st.selectbox("New Status", ["Received", "In Progress", "Resolved", "Closed"])
@@ -154,24 +155,28 @@ with tab2:
             (sent_df["Urgency"].isin(urgency_filter_sent)) &
             (sent_df["Status"].isin(status_filter_sent)) &
             (sent_df["Name"].str.contains(search_name_sent, case=False, na=False))
-        ]
+        ].copy()
 
-        filtered_sent_df["File Download"] = filtered_sent_df["File"].apply(
-            lambda path: f'<a href="file://{os.path.abspath(path)}" download>{os.path.basename(path)}</a>' if pd.notna(path) and os.path.exists(path) else ""
-        )
+        if not filtered_sent_df.empty:
+            filtered_sent_df["File Download"] = filtered_sent_df["File"].apply(
+                lambda path: f'<a href="file://{os.path.abspath(path)}" download>{os.path.basename(path)}</a>' if pd.notna(path) and os.path.exists(path) else ""
+            )
 
-        styled_sent_df = filtered_sent_df.style.applymap(
-            lambda x: urgency_color(x) if x in ["Low", "Medium", "High"] else "",
-            subset=["Urgency"]
-        )
+            styled_sent_df = filtered_sent_df.style.applymap(
+                lambda x: urgency_color(x) if x in ["Low", "Medium", "High"] else "",
+                subset=["Urgency"]
+            )
 
-        st.markdown(styled_sent_df.to_html(escape=False, index=False), unsafe_allow_html=True)
-        st.download_button("⬇️ Download as CSV", filtered_sent_df.to_csv(index=False), file_name="my_sent_referrals.csv")
-        excel_buf = io.BytesIO()
-        filtered_sent_df.to_excel(excel_buf, index=False, engine="xlsxwriter")
-        st.download_button("📊 Download as Excel", excel_buf.getvalue(), file_name="my_sent_referrals.xlsx")
+            st.markdown(styled_sent_df.to_html(escape=False, index=False), unsafe_allow_html=True)
+            st.download_button("⬇️ Download as CSV", filtered_sent_df.to_csv(index=False), file_name="my_sent_referrals.csv")
+            excel_buf = io.BytesIO()
+            filtered_sent_df.to_excel(excel_buf, index=False, engine="xlsxwriter")
+            st.download_button("📊 Download as Excel", excel_buf.getvalue(), file_name="my_sent_referrals.xlsx")
+        else:
+            st.info(t("No matching referrals found.", "No se encontraron referencias coincidentes."))
     else:
         st.info(t("You haven't sent any referrals yet.", "Aún no has enviado referencias."))
+
 
 
 # --- Tab 3: All Referrals Sent ---
