@@ -104,7 +104,18 @@ tab1, tab2, tab3, tab4 = st.tabs([
     t("All Referrals", "Todas las Referencias"),
     t("Analytics Dashboard", "Panel de Análisis")
 ])
-#----tab1-----
+
+
+# --- Helper Function ---
+def urgency_color(val):
+    if val == "High":
+        return "background-color: red; color: white"
+    elif val == "Medium":
+        return "background-color: orange; color: white"
+    elif val == "Low":
+        return "background-color: lightgreen"
+    return ""
+
 # --- Tab 1: Assigned Referrals ---
 with tab1:
     assigned_df = df[df["Assigned To"] == st.session_state.username]
@@ -126,10 +137,7 @@ with tab1:
                 lambda path: f'<a href="file://{os.path.abspath(path)}" download>{os.path.basename(path)}</a>' if pd.notna(path) and os.path.exists(path) else ""
             )
 
-            styled_df = filtered_df.style.applymap(
-                lambda x: urgency_color(x) if x in ["Low", "Medium", "High"] else "",
-                subset=["Urgency"]
-            )
+            styled_df = filtered_df.style.apply(lambda x: [urgency_color(v) for v in x] if x.name == "Urgency" else ["" for _ in x])
 
             st.markdown(styled_df.to_html(escape=False, index=False), unsafe_allow_html=True)
 
@@ -162,10 +170,7 @@ with tab2:
                 lambda path: f'<a href="file://{os.path.abspath(path)}" download>{os.path.basename(path)}</a>' if pd.notna(path) and os.path.exists(path) else ""
             )
 
-            styled_sent_df = filtered_sent_df.style.applymap(
-                lambda x: urgency_color(x) if x in ["Low", "Medium", "High"] else "",
-                subset=["Urgency"]
-            )
+            styled_sent_df = filtered_sent_df.style.apply(lambda x: [urgency_color(v) for v in x] if x.name == "Urgency" else ["" for _ in x])
 
             st.markdown(styled_sent_df.to_html(escape=False, index=False), unsafe_allow_html=True)
             st.download_button("⬇️ Download as CSV", filtered_sent_df.to_csv(index=False), file_name="my_sent_referrals.csv")
@@ -176,6 +181,7 @@ with tab2:
             st.info(t("No matching referrals found.", "No se encontraron referencias coincidentes."))
     else:
         st.info(t("You haven't sent any referrals yet.", "Aún no has enviado referencias."))
+
 
 
 
